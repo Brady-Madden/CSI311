@@ -1,0 +1,93 @@
+#lang racket
+(require graph)
+
+(define adj-list (make-hash))
+
+(define add-arc!
+  (lambda (adj-list n1name n2name weight)
+    (cond [(not (hash-has-key? adj-list n1name)) (hash-set! adj-list n1name (make-hash))])
+    (let ((node1-adjacent-nodes (hash-ref adj-list n1name #f)))
+      (hash-set! node1-adjacent-nodes n2name weight))))
+
+(define add-bidirectional-arcs!
+  (lambda (adj-list n1name n2name weight)
+    (add-arc! adj-list n1name n2name weight)
+    (add-arc! adj-list n2name n1name weight)))
+
+(define adjacent?
+  (lambda (adj-list n1name n2name)
+    (let ((node1-adjacent-nodes (hash-ref adj-list n1name #f)))
+      (if node1-adjacent-nodes
+          (let ((weight (hash-ref node1-adjacent-nodes n2name #f)))
+            weight)
+          #f))))
+
+(define social-graph(make-hash))
+(define product-categories(make-hash))
+(define customer-purchase-history(make-hash))
+(define similar-products(make-hash))
+
+(define addSocial!
+(lambda(person1 person2 weight)
+      (add-bidirectional-arcs! social-graph person1 person2 weight)))
+
+(define addUser!
+  (lambda (person)
+    (hash-set! customer-purchase-history person '())))
+   
+(define addPurchase!
+  (lambda (person product)
+    (cond ((not (hash-has-key? customer-purchase-history person)) (addUser! person)))
+    (hash-set! customer-purchase-history person (cons product (hash-ref! customer-purchase-history person #f)))))
+
+(define addProduct!
+  (lambda (product category)
+    (hash-set! product-categories product category)))
+
+(define recommendProduct
+  (lambda (person hops)
+    (display "blender")(newline)))
+
+(define get-categories
+  (lambda (items)
+    (define categories (mutable-set))
+    (for ((s items))
+      (set-add! categories (hash-ref product-categories s '())))
+    categories))
+
+(define findSimilarProduct
+  (lambda (category person)
+    (let((product-categories(hash-ref customer-purchase-history person #f)))
+      (hash-set! similar-products category person))))
+
+(define get-possible-recommendations
+  (lambda (person1 person2)
+    (define p1history (hash-ref customer-purchase-history person1 '()))
+    (define p2history (hash-ref customer-purchase-history person2 '()))
+    (define p1history-categories (get-categories p1history))
+    (define p2h-filtered
+      (filter (lambda (item) (and
+                              (set-member? p1history-categories (hash-ref product-categories item))
+                              (not (member item p1history))))
+              p2history))
+    p2h-filtered))
+
+(addSocial! 'Sue 'Bob 5)
+(addSocial! 'Sue 'Andrea 10)
+(addProduct! 'iPhone 'Electronics)
+(addProduct! 'Macbook 'Electronics)
+(addProduct! 'Toaster 'Homewares)
+(addProduct! 'Blender 'Homewares)
+(addPurchase! 'Bob 'Toaster)
+(addPurchase! 'Sue 'Blender)
+(adjacent? social-graph 'Sue 'Bob)
+(adjacent? social-graph 'Sue 'Andrea)
+(hash->list product-categories)
+(hash->list customer-purchase-history)
+(display "The Product Recommended is a: ") 
+(recommendProduct 'Bob 2)
+(hash-values customer-purchase-history)
+;(bfs social-graph 'Sue)
+;(let-values([(x y)(dijkstra social-graph 'Sue)])
+ ; (display (hash-keys x))(newline)
+  ;(display(hash-values x))(newline)
